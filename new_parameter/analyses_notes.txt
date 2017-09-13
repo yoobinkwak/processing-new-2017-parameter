@@ -1,0 +1,69 @@
+copied renamed images to 0_raw
+used oriented T1 (o...nii.gz)
+
+
+1. Motion Correction
+	mkdir 1_motion_correction
+
+	hcp_scripts/global/scripts/mcflirt_acc.sh 0_raw/rsfMRI.nii.gz 1_motion_correction/mc_done 0_raw/SBRef.nii.gz
+
+
+2. TOPUP
+	!!! CHECK unwarpdir -x (RL) or x (LR) ???
+
+	- edit line 14, 107 of TopupPreprocessingAll.sh
+	- echospacing in sec
+	
+	mkdir 2_topup_unwarpdir_-x
+
+	hcp_scripts/global/scripts/TopupPreprocessingAll.sh --workingdir=2_topup_unwarpdir_-x --phaseone=0_raw/BLIP_RL.nii.gz --phasetwo=0_raw/BLIP_LR.nii.gz --scoutin=0_raw/SBRef.nii.gz --echospacing=0.00069 --unwarpdir=-x --owarp --ofmapmag --ofmapmagbrain --ofmap --ojacobian --gdcpeffs=NONE --topupconfig=b02b0.cnf --usejacobian=true
+
+	mkdir 2_topup_unwarpdir_x
+
+	hcp_scripts/global/scripts/TopupPreprocessingAll.sh --workingdir=2_topup_unwarpdir_x --phaseone=0_raw/BLIP_RL.nii.gz --phasetwo=0_raw/BLIP_LR.nii.gz --scoutin=0_raw/SBRef.nii.gz --echospacing=0.00069 --unwarpdir=x --owarp --ofmapmag --ofmapmagbrain --ofmap --ojacobian --gdcpeffs=NONE --topupconfig=b02b0.cnf --usejacobian=true
+
+
+!! For the time being, using unwarpdir=x  
+
+
+3. SBRef to T1 registration
+
+	bet 0_raw/T1.nii.gz 0_raw/T1_brain.nii.gz -m -f 0.2 -B
+	(tried f 0.3, 0.2 seems better..?)
+
+
+	mkdir 3_SBRef_to_T1
+
+	applywarp --rel --interp=spline -i 0_raw/SBRef.nii.gz -r 0_raw/SBRef.nii.gz -w 2_topup_unwarpdir_x/WarpField.nii.gz -o 3_SBRef_to_T1/SBRef_undistorted
+
+	fslmaths 3_SBRef_to_T1/SBRef_undistorted.nii.gz -mul 2_topup_unwarpdir_x/Jacobian.nii.gz 3_SBRef_to_T1/SBRef_undistorted
+
+	hcp_scripts/global/scripts/epi_reg_dof --dof=6 --epi=3_SBRef_to_T1/SBRef_undistorted.nii.gz --t1=0_raw/T1.nii.gz --t1brain=0_raw/T1_brain.nii.gz --out=3_SBRef_to_T1/SBRef_undistorted2T1w_init
+
+
+	cp -r SBRef_undistorted2T1w_init.mat fMRI2str.mat
+
+	convertwarp --relout --rel -r 0_raw/T1.nii.gz --warp1=2_topup_unwarpdir_x/WarpField.nii.gz --postmat=3_SBRef_to_T1/SBRef_undistorted2T1w_init.mat -o 3_SBRef_to_T1/SBRef_undistorted2T1w_init_warp
+
+	applywarp --rel --interp=spline -i 2_topup_unwarpdir_x/Jacobian.nii.gz -r 0_raw/T1.nii.gz --premat=3_SBRef_to_T1/SBRef_undistorted2T1w_init.mat -o 3_SBRef_to_T1/Jacobian2T1w.nii.gz
+
+	applywarp --rel --interp=spline -i 0_raw/SBRef.nii.gz -r 0_raw/T1.nii.gz -w 3_SBRef_to_T1/SBRef_undistorted2T1w_init_warp -o 3_SBRef_to_T1/warped_SBRef_undistorted2T1w.nii.gz
+
+	fslmaths warped_SBRef_undistorted2T1w.nii.gz -mul Jacobian2T1w.nii.gz jac_warped_SBRef_undistorted2T1w.nii.gz
+
+
+* T1 to MNI Registration (not part of fMRIVolume pipeline)
+	
+	mkdir 4_one_step_resampling	
+	mkdir 4_one_step_resampling/struc_to_std
+
+	flirt -interp spline -dof 12 -in 0_raw/T1_brain.nii.gz -ref hcp_scripts/global/templates/MNI152_T1_0.8mm_brain.nii.gz -omat 4_one_step_resampling/struc_to_std/flirt_T1brain_to_MNI0.8brain.mat -out 4_one_step_resampling/struc_to_std/flirt_T1brain_to_MNI0.8brain
+
+	fnirt --in=0_raw/T1.nii.gz --ref=/usr/local/fsl/data/standard/MNI152_T1_2mm.nii.gz --aff=4_one_step_resampling/struc_to_std/flirt_T1brain_to_MNI0.8brain.mat --refmask=/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask_dil.nii.gz --fout=4_one_step_resampling/struc_to_std/fnirt_Warpfield.nii.gz --jout=4_one_step_resampling/struc_to_std/fnirt_Jacobians.nii.gz --refout=4_one_step_resampling/struc_to_std/fnirt_IntensityModulatedT1.nii.gz --iout=4_one_step_resampling/struc_to_std/fnirt_T1_to_MNI2.nii.gz --logout=4_one_step_resampling/struc_to_std/fnirt_MNI2.txt --intout=4_one_step_resampling/struc_to_std/fnirt_Intensities.nii.gz --cout=4_one_step_resampling/struc_to_std/fnirt_Coefficients.nii.gz --config=hcp_scripts/global/config/T1_2_MNI152_2mm.cnf 
+
+	invwarp -w 4_one_step_resampling/struc_to_std/fnirt_Warpfield.nii.gz -o o4_one_step_resampling/struc_to_std/inv_fnirt_Warpfield.nii.gz -r /usr/local/fsl/data/standard/MNI152_T1_2mm.nii.gz 
+
+	applywarp --rel --interp=spline -i 0_raw/T1.nii.gz -r hcp_scripts/global/templates/MNI152_T1_0.8mm.nii.gz -w 4_one_step_resampling/struc_to_std/fnirt_Warpfield.nii.gz -o 4_one_step_resampling/struc_to_std/warped_T1_to_MNI0.8.nii.gz	
+
+
+
