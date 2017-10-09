@@ -71,7 +71,7 @@ do
     if [ ! -f ${fs_T1w2T2} ]
     then
         #### call HCP script for high res WM surface placement & fine tuning T2 to T1 (output log at the directory level of the script) ####
-        bash ${HCP_scripts}/edit_FreeSurferHiresWhite.sh ${i} ${FS} ${T1} ${T2}
+        bash ${HCP_scripts}/2a_EditFreeSurferHiresWhite.sh ${i} ${FS} ${T1} ${T2}
     else
         echo ${i} high resolution white surface placement and bbregister done
     fi
@@ -89,7 +89,7 @@ do
     if [ ! -d ${fs_ribbon1_dir} ]
     then
         #### call HCP script for high res pial surface placement ####
-        bash ${HCP_scripts}/edit_FreeSurferHiresPial.sh ${i} ${FS} ${T1} ${T2}
+        bash ${HCP_scripts}/2b_EditFreeSurferHiresPial.sh ${i} ${FS} ${T1} ${T2}
     else
         echo ${i} high resolution pial surface placement done
     fi
