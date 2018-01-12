@@ -17,7 +17,7 @@ do
     T1wImageBrain=${i}/Preprocess_Structure/PreFreesurfer/T1w/T1w_acpc_dc_restore_brain.nii.gz
     T2wImage=${i}/Preprocess_Structure/PreFreesurfer/T1w/T2w_acpc_dc_restore.nii.gz
 
-    #여기 아래 코드 바꿀 수 있음
+
     T1wImageFile=`remove_ext $T1wImage`;
     T1wImageBrainFile=`remove_ext $T1wImageBrain`;
 
