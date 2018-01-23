@@ -13,7 +13,8 @@ Sigma="5" #in mm
 FREESURFER_HOME=/Applications/freesurfer        ## Iadded
 export SUBJECTS_DIR="$SubjectDIR"
 
-CARET7DIR=workbench/bin_macosx64        ## I added
+#CARET7DIR=workbench/bin_macosx64        ## I added
+CARET7DIR=/Users/yoobin_kwak/preproc_BCS_001_002/workbench    ## I added
 
 mridir=$SubjectDIR/$SubjectID/mri
 surfdir=$SubjectDIR/$SubjectID/surf
