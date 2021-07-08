@@ -23,7 +23,7 @@ do
 
     export SUBJECTS_DIR=${SubjectDIR}
 
-#### Make Spline Interpolated Downsample to 1mm ####
+    #### Make Spline Interpolated Downsample to 1mm ####
     if [ ! -f "$T1wImageFile"_1mm.nii.gz ] ; then
         echo "${i} FREESURFER : Making Spline Interpolated Downsample to 1mm"
         Mean=`fslstats $T1wImageBrain -M`
@@ -35,7 +35,7 @@ do
         echo "${i} FREESURFER : Input T1w Downsampled to 1mm"
     fi
 
-#### Initial Recon-all Steps ####
+    #### Initial Recon-all Steps ####
     if [ ! -f ${SubjectDIR}/${i}/mri/T1.mgz ] ; then         ## normalization output
         echo "${i} FREESURFER : Runnung autorecon1 steps with the exception of -skullstrip" 
         # Call recon-all with flags that are part of "-autorecon1", with the exception of -skullstrip. 
@@ -45,7 +45,7 @@ do
         echo "${i} FREESURFER : 1st (out of 4) recon-all Stage Completed  "
     fi
 
-#### Generate brain mask ####
+    #### Generate brain mask ####
     if [ ! -f ${SubjectDIR}/${i}/mri/brainmask.mgz ] ; then
         echo "${i} FREESURFER : Generating Brain Mask "
         mri_convert "$T1wImageBrainFile"_1mm.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz --conform
@@ -57,7 +57,8 @@ do
         echo "${i} FREESURFER : Brain Mask Generated"
     fi
 
-#### Call recon-all to run most of the "-autorecon2" stages, but turning off smooth2, inflate2, curvstats, and segstats stages ####
+    #### Call recon-all to run most of the "-autorecon2" stages, 
+    #### but turning off smooth2, inflate2, curvstats, and segstats stages ####
     if [ ! -f ${SubjectDIR}/${i}/surf/lh.white ] ; then         ## finalsurfs output (check if this is the last output generated from this stage)
         echo "${i} FREESURFER : Runnung autorecon2 steps with few exceptions"
         recon-all -subjid $SubjectID -sd $SubjectDIR -autorecon2 -nosmooth2 -noinflate2 -nocurvstats -nosegstats
@@ -65,7 +66,7 @@ do
         echo "${i} FREESURFER : 2nd (out of 4) recon-all Stage Completed  "
     fi
 
-#### Highres white stuff and Fine Tune T2w to T1w Reg ####
+    #### Highres white stuff and Fine Tune T2w to T1w Reg ####
     if [ ! -f ${SubjectDIR}/${i}/mri/T2w_hires.nii.gz ] ; then
         echo "${i} : FREESURFER Processing High Resolution WM and Fine Tuning T2w to T1w Registration"
         bash ${PipelineScripts}/edit_FreeSurferHiresWhite.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage"
@@ -74,7 +75,7 @@ do
         echo "${i} FREESURFER : High Resolution White Surface Placement and bbregister Completed"
     fi
 
-#### Intermediate Recon-all Steps ####
+    #### Intermediate Recon-all Steps ####
     if [ ! -f ${SubjectDIR}/${i}/label/lh.aparc.annot ] ; then      ## cortpar output
         echo "${i} FREESURFER : Runnung intermediate recon-all steps"
         recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphere -surfreg -jacobian_white -avgcurv -cortparc
@@ -82,7 +83,7 @@ do
         echo "${i} FREESURFER : 3rd (out of 4) recon-all Stage  Completed"
     fi
 
-#### Highres pial stuff (this module adjusts the pial surface based on the the T2w image) ####
+    #### Highres pial stuff (this module adjusts the pial surface based on the the T2w image) ####
     if [ ! -f ${SubjectDIR}/${i}/surf/rh.thickness.postT2.pass2 ] ; then        
         echo "${i} FREESURFER : Running High Resolution Pial Surface"
 
@@ -91,7 +92,7 @@ do
         echo "${i} FREESURFER : High Resolution Pial Surface Placement Completed"
     fi
 
-#### Final Recon-all Steps ####
+    #### Final Recon-all Steps ####
     if [ ! -f ${SubjectDIR}/${i}/stats/lh.entorhinal_exvivo.stats ] ; then
         echo "${i} FREESURFER : Running final recon-all steps"
 
